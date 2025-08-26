@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Corazón lleno de corazones 💖</title>
+<style>
+:root{
+  --rosa1:#FF8EC7; --rosa2:#FF6FB5; --rosa3:#FF4FA3;
+  --magenta:#F6339A; --amarillo:#FFD166; --corazon:#FF5DA2;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, Ubuntu;
+  background: radial-gradient(1200px 600px at 80% -10%, #ffdbe9 0%, #f7c3da 45%, #f6b4d3 60%, #f3a6cc 75%, #f09ac7 100%);
+  color:#402;
+  display:grid;
+  place-items:center;
+  padding:16px;
+}
+.card{
+  width:min(920px, 95vw);
+  background:#fff9fd;
+  border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.15);
+  overflow:hidden;
+  display:grid;
+  grid-template-columns: 1.1fr 1fr;
+}
+@media (max-width:900px){
+  .card{ grid-template-columns: 1fr; }
+}
+.lienzo{
+  position:relative;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(180deg, #ffeef7 0%, #fff 100%);
+}
+canvas{ width:100%; height:100%; display:block; }
+.texto{
+  padding:28px 28px 22px 22px;
+}
+h1{
+  margin:0 0 8px 0;
+  font-weight:800;
+  letter-spacing:.3px;
+}
+.type{
+  white-space:pre-wrap;
+  line-height:1.35;
+  font-size:clamp(14px, 2.1vw, 16px);
+  min-height:8.5em;
+}
+.contador{
+  margin-top:18px;
+  padding-top:12px;
+  border-top:1px dashed #f0b5d2;
+  font-size:clamp(14px, 2.3vw, 16px);
+  text-align:center;
+}
+.desde{
+  font-weight:700;
+  color:#c02674;
+}
+.firma{
+  margin-top:14px;
+  opacity:.85;
+  font-style:italic;
+}
+.barra{
+  height:4px; border-radius:4px; background:#ffd6ea; overflow:hidden; margin:8px 0 14px;
+}
+.progreso{
+  width:0%; height:100%; background:linear-gradient(90deg, var(--rosa3), var(--magenta));
+  animation: crecer 3s ease forwards 1.2s;
+}
+@keyframes crecer{ to{ width:100%; } }
+
+.petalos{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+.timer-container {
+  position:absolute; bottom:8px; width:100%; text-align:center; font-weight:700; color:#c02674;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lienzo">
+    <canvas id="cv" width="1200" height="900" aria-label="Corazón lleno de corazones"></canvas>
+
+    <div class="timer-container">
+      <div><span class="desde">Mi amor por ti comenzó hace…</span></div>
+      <div id="timer">—</div>
+    </div>
+  </div>
+
+  <div class="texto">
+    <h1>🌸 Árbol de Corazones</h1>
+    <div class="barra"><div class="progreso"></div></div>
+    <div id="type" class="type" aria-live="polite"></div>
+
+    <div class="firma">— I Love You! 💞</div>
+  </div>
+</div>
+
+<script>
+const MENSAJE = `Para el amor de mi vida:
+
+Aunque la distancia nos separe,
+mi corazón siempre te busca a ti.
+No importa el tiempo ni los días,
+siempre serás tú mi razón de sonreír.
+
+💗`;
+
+// Fecha actualizada del timer
+const FECHA_INICIO = new Date("2025-04-04T20:30:00");
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+// Corazones pequeños
+let placed = [];
+const MAX_HEARTS = 500;
+const COLORS = ['#ff7fb8','#ff5da2','#ff8ec7','#ffc2dd','#ffd166','#ff9fcf','#ff6fb5'];
+
+// Path corazón grande centrado
+function heartPath(cx, cy, s){
+  ctx.beginPath();
+  const k = s;
+  ctx.moveTo(cx, cy - 0.25*k);
+  ctx.bezierCurveTo(cx + 0.55*k, cy - 0.95*k, cx + 1.25*k, cy + 0.05*k, cx, cy + 0.85*k);
+  ctx.bezierCurveTo(cx - 1.25*k, cy + 0.05*k, cx - 0.55*k, cy - 0.95*k, cx, cy - 0.25*k);
+  ctx.closePath();
+}
+
+// Corazón pequeño
+function drawSmallHeart(x, y, size, rot, color){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(size, size);
+  ctx.beginPath();
+  ctx.moveTo(0, -8);
+  ctx.bezierCurveTo(6, -14, 16, -6, 0, 10);
+  ctx.bezierCurveTo(-16, -6, -6, -14, 0, -8);
+  ctx.fillStyle = color;
+  ctx.shadowColor = 'rgba(0,0,0,.1)';
+  ctx.shadowBlur = 5;
+  ctx.fill();
+  ctx.restore();
+}
+
+// Punto aleatorio dentro del corazón grande
+function randomPointInHeart(){
+  const cx = W/2, cy = H*0.42, s = W*0.34;
+  for(let i=0;i<50;i++){
+    const x = cx + (Math.random()*2-1)*s*0.95;
+    const y = cy + (Math.random()*1.4-0.6)*s*0.95; // más rango vertical para llenar pico
+    ctx.save();
+    heartPath(cx, cy, s);
+    const ok = ctx.isPointInPath(x,y);
+    ctx.restore();
+    if(ok) return {x,y};
+  }
+  return {x:cx, y:cy};
+}
+
+let textIndex = 0;
+let heartIndex = 0;
+const box = document.getElementById('type');
+
+function typeWithHearts(txt){
+  function step(){
+    if(textIndex <= txt.length){
+      box.textContent = txt.slice(0,textIndex);
+      textIndex++;
+
+      // Añade varios corazones por letra para llenar mejor
+      if(heartIndex < MAX_HEARTS){
+        const heartsToAdd = 2 + Math.floor(Math.random()*2); // 2-3 corazones
+        for(let i=0;i<heartsToAdd;i++){
+          const {x,y} = randomPointInHeart();
+          placed.push({
+            x, y,
+            s: 0.7 + Math.random()*1.8,
+            r: (Math.random()*50-25)*Math.PI/180,
+            c: COLORS[(Math.random()*COLORS.length)|0]
+          });
+          heartIndex++;
+        }
+      }
+
+      // Letra más lenta
+      setTimeout(step, txt[textIndex-1]==='\n'? 50*8: 50);
+    }
+  }
+  step();
+}
+typeWithHearts(MENSAJE);
+
+// Animación
+function animate(){
+  ctx.clearRect(0,0,W,H);
+  for(const h of placed) drawSmallHeart(h.x, h.y, h.s, h.r, h.c);
+  requestAnimationFrame(animate);
+}
+animate();
+
+// Contador
+const timer = document.getElementById('timer');
+function updateTimer(){
+  const now = new Date();
+  let diff = Math.max(0, now - FECHA_INICIO);
+  const seg  = Math.floor(diff/1000)%60;
+  const min  = Math.floor(diff/60000)%60;
+  const hrs  = Math.floor(diff/3600000)%24;
+  const dias = Math.floor(diff/86400000);
+  timer.textContent = `${dias} días ${hrs} horas ${min} minutos ${seg.toString().padStart(2,'0')} segundos`;
+}
+updateTimer();
+setInterval(updateTimer,1000);
+</script>
+</body>
+</html>

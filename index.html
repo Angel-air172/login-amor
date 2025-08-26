@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churrumais</title>
+    <link rel="stylesheet" href="style.css"> <!-- CSS debe estar en la misma carpeta -->
+</head>
+<body>
+    <div class="formulario">
+        <h1>Bienvenida Amor</h1>
+        <form onsubmit="return validarLogin()">
+            <div class="usuario">
+                <label>Como se llama tu usuario? </label><br>
+                <input type="text" id="usuario" required>
+            </div>
+            <div class="contraseña">
+                <label>Contraseña</label><br>
+                <input type="password" id="contraseña" required>
+            </div>
+            <br>
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+
+    <!-- 5 corazones flotando -->
+    <span class="corazon">❤️</span>
+    <span class="corazon">❤️</span>
+    <span class="corazon">❤️</span>
+    <span class="corazon">❤️</span>
+    <span class="corazon">❤️</span>
+
+    <!-- Script de validación -->
+    <script>
+    function validarLogin() {
+        const usuario = document.getElementById("usuario").value;
+        const contraseña = document.getElementById("contraseña").value;
+
+        // Usuario y contraseña predeterminados
+        if(usuario === "chaparrita" && contraseña === "04042025") {
+            // Abre la página del dibujo en otra pestaña
+            window.open("arbol_amor.html", "_blank");
+        } else {
+            alert("Usuario o contraseña incorrecta 😢");
+        }
+
+        return false; // Evita que la página se recargue
+    }
+    </script>
+</body>
+</html>
+
+
+
